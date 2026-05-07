@@ -13,42 +13,41 @@ every invocation.
 
 ## Quick start
 
-### Linux / macOS
+### I already have uv
 
 ```bash
-curl -sL https://raw.gitcode.com/nearlink-vip/fbb-env-install/raw/main/script/install.sh | bash
+uv tool install git+https://github.com/sanchuanhehe/fbb-cli.git
+fbb setup
 ```
 
-Add to PATH (the installer prints the exact command for your shell):
+That's it. `uv tool install` puts `fbb` on your PATH; `fbb setup` provisions
+Python 3.11.4, the build venv, and the RISC-V toolchain into
+`~/.fbb_hispark`.
+
+### One-liner (bootstraps uv too)
+
+#### Linux / macOS
 
 ```bash
-echo 'export PATH="$HOME/.fbb_hispark/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
+curl -sL https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/script/install.sh | bash
 ```
 
-Then build:
+#### Windows
+
+```powershell
+irm https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/script/install.ps1 | iex
+```
+
+The one-liner installs uv, then runs `uv tool install` + `fbb setup`. Open a
+new terminal if `fbb` isn't found immediately (uv's tool bin dir needs to be
+on PATH, which already happens if you've used uv before).
+
+### Build
+
+Once installed, build any fbb-framework SDK:
 
 ```bash
 cd ~/hispark/fbb_ws63/src
-fbb build -c ws63-liteos-app
-```
-
-### Windows
-
-```powershell
-irm https://raw.gitcode.com/nearlink-vip/fbb-env-install/raw/main/script/install.ps1 | iex
-```
-
-Add to user PATH (open a new terminal after):
-
-```powershell
-[Environment]::SetEnvironmentVariable('PATH', "$env:USERPROFILE\.fbb_hispark\bin;" + [Environment]::GetEnvironmentVariable('PATH', 'User'), 'User')
-```
-
-Then build:
-
-```powershell
-cd D:\hispark\fbb_ws63\src
 fbb build -c ws63-liteos-app
 ```
 
@@ -92,6 +91,7 @@ curl -sL .../install.sh | bash
 ## Commands
 
 ```
+fbb setup                  Provision build environment (Python 3.11.4, venv, toolchain)
 fbb build -c <target>     Build a named target
 fbb run -- <cmd> [args]   Run any command inside the activated environment
 fbb doctor                Check environment health
@@ -112,13 +112,13 @@ fbb help                  Show help
 ## What gets installed
 
 ```
+~/.local/bin/
+└── fbb                  The CLI (managed by uv tool)
+
 ~/.fbb_hispark/
-├── bin/
-│   └── fbb              Shell launcher (add this dir to PATH)
-├── venv/                 Python virtual environment
+├── venv/                 Python virtual environment (numpy, kconfiglib, ...)
 ├── toolchain/            HiSpark RISC-V toolchain (gcc, ninja, etc.)
-├── install.log           Full install transcript
-└── .install-state        Resume marker for interrupted runs
+└── install.log           Full install transcript
 ```
 
 ## Troubleshooting
@@ -149,8 +149,8 @@ curl -sL .../install.sh | bash
 ## Development
 
 ```bash
-git clone https://gitcode.com/nearlink-vip/fbb-env-install.git
-cd fbb-env-install
+git clone https://github.com/sanchuanhehe/fbb-cli.git
+cd fbb-cli
 
 # install in editable mode
 uv venv
