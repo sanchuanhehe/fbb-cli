@@ -11,6 +11,30 @@ fbb build -c <target>    # e.g. fbb build -c ws63-liteos-app
 No `source` step. `fbb` self-activates the Python venv and toolchain on
 every invocation.
 
+## Skip This README
+
+```
+Read this and tell me what this project does and how to install it:
+https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/README.md
+```
+
+Paste that into your agent. It reads the README so you don't have to.
+
+## For LLM Agents
+
+Paste this into your AI coding agent (Claude Code, Cursor, etc.):
+
+```
+Read and follow the installation instructions at:
+https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/docs/install.md
+```
+
+Or fetch directly:
+
+```bash
+curl -s https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/docs/install.md
+```
+
 ## Quick start
 
 ### 1. Install uv
