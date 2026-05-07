@@ -1,7 +1,21 @@
 [project]
 name = "fbb-cli"
 version = "0.1.0"
-description = "Add your description here"
+description = "HiSpark fbb framework build environment CLI"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+authors = [
+    { name = "HiSilicon (Shanghai) Technologies Co., Ltd." }
+]
 dependencies = []
+
+[project.scripts]
+fbb = "fbb_cli.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fbb_cli"]
