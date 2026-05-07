@@ -6,13 +6,13 @@ shell — the steps below ensure `fbb` is available regardless.
 ## Install
 
 ```bash
-# 1. Ensure uv is available
+# 1. Ensure uv is available (installs to ~/.local/bin/)
 if ! command -v uv >/dev/null 2>&1; then
   curl -LsSf https://astral.sh/uv/install.sh | sh
-  export PATH="$HOME/.local/bin:$PATH"
 fi
+export PATH="$HOME/.local/bin:$PATH"
 
-# 2. Install fbb CLI
+# 2. Install fbb CLI (also to ~/.local/bin/)
 uv tool install git+https://github.com/sanchuanhehe/fbb-cli.git
 
 # 3. Provision build environment (Python 3.11.4 + RISC-V toolchain)

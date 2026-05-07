@@ -11,18 +11,16 @@ fbb build -c <target>    # e.g. fbb build -c ws63-liteos-app
 No `source` step. `fbb` self-activates the Python venv and toolchain on
 every invocation.
 
-## Skip This README
-
-```
-Read this and tell me what this project does and how to install it:
-https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/README.md
-```
-
-Paste that into your agent. It reads the README so you don't have to.
-
 ## For LLM Agents
 
-Fetch the installation guide and follow it:
+Paste this into your AI coding agent (Claude Code, Cursor, etc.):
+
+```
+Read and follow the installation instructions at:
+https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/docs/install.md
+```
+
+Or fetch directly:
 
 ```bash
 curl -s https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/docs/install.md
@@ -43,6 +41,13 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
+`uv` installs to `~/.local/bin/`. Open a **new terminal** after installing, or
+run:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
 ### 2. Install fbb
 
 ```bash
@@ -50,7 +55,8 @@ uv tool install git+https://github.com/sanchuanhehe/fbb-cli.git
 fbb setup
 ```
 
-Done. `uv tool install` puts `fbb` on your PATH; `fbb setup` provisions
+`uv tool install` puts `fbb` in `~/.local/bin/` — the same place `uv` lives,
+so once step 1 is done, no extra PATH setup is needed. `fbb setup` provisions
 Python 3.11.4, the build venv, and the RISC-V toolchain into
 `~/.fbb_hispark`.
 
@@ -63,7 +69,7 @@ fbb build -c ws63-liteos-app
 
 ## Mirror configuration
 
-If you're behind the GFW, set Chinese mirrors before running `fbb setup`:
+If you're in mainland China, set mirrors before `fbb setup` for faster downloads:
 
 ```bash
 export UV_PYTHON_INSTALL_MIRROR=https://mirror.nju.edu.cn/github-release/indygreg/python-build-standalone/Latest
@@ -76,7 +82,7 @@ fbb setup
 | Variable | Default | Used by |
 |---|---|---|
 | `FBB_PIP_INDEX` | `https://pypi.tuna.tsinghua.edu.cn/simple` | pip / uv pip |
-| `UV_PYTHON_INSTALL_MIRROR` | `https://mirror.nju.edu.cn/.../python-build-standalone/Latest` | uv python install |
+| `UV_PYTHON_INSTALL_MIRROR` | `https://mirror.nju.edu.cn/github-release/indygreg/python-build-standalone/Latest` | uv python install |
 | `FBB_OBS_BASE` | `https://hispark-obs.obs.cn-east-3.myhuaweicloud.com` | Toolchain download |
 
 ## Commands
