@@ -13,69 +13,48 @@ every invocation.
 
 ## Quick start
 
-### I already have uv
+### 1. Install uv
+
+Follow the [uv installation guide](
+https://docs.astral.sh/uv/getting-started/installation/).
+
+```bash
+# Linux / macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+### 2. Install fbb
 
 ```bash
 uv tool install git+https://github.com/sanchuanhehe/fbb-cli.git
 fbb setup
 ```
 
-That's it. `uv tool install` puts `fbb` on your PATH; `fbb setup` provisions
+Done. `uv tool install` puts `fbb` on your PATH; `fbb setup` provisions
 Python 3.11.4, the build venv, and the RISC-V toolchain into
 `~/.fbb_hispark`.
 
-### One-liner (bootstraps uv too)
-
-#### Linux / macOS
-
-```bash
-curl -sL https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/script/install.sh | bash
-```
-
-#### Windows
-
-```powershell
-irm https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/script/install.ps1 | iex
-```
-
-The one-liner installs uv, then runs `uv tool install` + `fbb setup`. Open a
-new terminal if `fbb` isn't found immediately (uv's tool bin dir needs to be
-on PATH, which already happens if you've used uv before).
-
-### Build
-
-Once installed, build any fbb-framework SDK:
+### 3. Build
 
 ```bash
 cd ~/hispark/fbb_ws63/src
 fbb build -c ws63-liteos-app
 ```
 
-## Install options
-
-| Option | Effect |
-|---|---|
-| `-d <path>` / `--install-dir <path>` | Custom install directory (default: `~/.fbb_hispark`) |
-| `--skip-tools` | Python-only setup, skip toolchain download |
-| `--force` | Wipe and reinstall everything |
-| `--uv-version <ver>` | Pin a specific `uv` release |
-
-### Bash
-
-```bash
-curl -sL .../install.sh | bash -s -- -d /opt/fbb --skip-tools
-```
-
-### PowerShell
-
-```powershell
-$env:FBB_HOME = 'C:\hispark\fbb'
-irm .../install.ps1 | iex
-```
-
 ## Mirror configuration
 
-All defaults are Chinese mirrors. Override via environment variables:
+If you're behind the GFW, set Chinese mirrors before running `fbb setup`:
+
+```bash
+export UV_PYTHON_INSTALL_MIRROR=https://mirror.nju.edu.cn/github-release/indygreg/python-build-standalone/Latest
+export FBB_PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
+export FBB_OBS_BASE=https://hispark-obs.obs.cn-east-3.myhuaweicloud.com
+
+fbb setup
+```
 
 | Variable | Default | Used by |
 |---|---|---|
@@ -83,22 +62,16 @@ All defaults are Chinese mirrors. Override via environment variables:
 | `UV_PYTHON_INSTALL_MIRROR` | `https://mirror.nju.edu.cn/.../python-build-standalone/Latest` | uv python install |
 | `FBB_OBS_BASE` | `https://hispark-obs.obs.cn-east-3.myhuaweicloud.com` | Toolchain download |
 
-```bash
-export FBB_PIP_INDEX='https://mirrors.aliyun.com/pypi/simple/'
-curl -sL .../install.sh | bash
-```
-
 ## Commands
 
 ```
-fbb setup                  Provision build environment (Python 3.11.4, venv, toolchain)
-fbb build -c <target>     Build a named target
-fbb run -- <cmd> [args]   Run any command inside the activated environment
-fbb doctor                Check environment health
-fbb shell                 Spawn a subshell with the environment activated
+fbb setup                      Provision build environment (one-time)
+fbb build -c <target>          Build a named target
+fbb run -- <cmd> [args...]     Run any command inside the activated environment
+fbb doctor                     Check environment health
+fbb shell                      Spawn a subshell with the environment activated
 fbb env --print {sh|ps1|bat|json}
-                          Print activation snippet
-fbb help                  Show help
+                               Print activation snippet
 ```
 
 ### SDK auto-detection
@@ -108,6 +81,14 @@ fbb help                  Show help
 1. `--sdk-dir <path>` flag
 2. `FBB_SDK_DIR` environment variable
 3. Walk up from the current directory looking for `src/build.py`
+
+### Setup options
+
+```
+fbb setup --install-dir /opt/fbb    Custom build environment directory
+fbb setup --skip-tools              Python-only, skip toolchain download
+fbb setup --force                   Recreate venv from scratch
+```
 
 ## What gets installed
 
@@ -134,16 +115,19 @@ Common issues:
 
 | Symptom | Fix |
 |---|---|
-| `[fbb] Python not found` | Re-run the installer |
+| `fbb: command not found` | `uv tool list` — if missing, re-run `uv tool install`; ensure `~/.local/bin` is on PATH |
+| `[fbb] Python not found` | Run `fbb setup` to provision the build environment |
 | `ModuleNotFoundError: numpy` | Use `fbb run python` not bare `python` |
-| `ninja: fatal: ...` | Toolchain missing; `fbb doctor` to confirm, then reinstall with `--force` |
-| Behind a proxy | Set `HTTPS_PROXY` / `HTTP_PROXY` before installing |
+| `ninja: fatal: ...` | Toolchain missing; run `fbb setup --force` |
+| Behind a proxy | Set `HTTPS_PROXY` / `HTTP_PROXY` before any network operation |
 
 To start over:
 
 ```bash
 rm -rf ~/.fbb_hispark
-curl -sL .../install.sh | bash
+uv tool uninstall fbb-cli
+uv tool install git+https://github.com/sanchuanhehe/fbb-cli.git
+fbb setup
 ```
 
 ## Development
@@ -152,11 +136,9 @@ curl -sL .../install.sh | bash
 git clone https://github.com/sanchuanhehe/fbb-cli.git
 cd fbb-cli
 
-# install in editable mode
 uv venv
 uv pip install -e .
 
-# run locally
 python -m fbb_cli doctor
 python -m fbb_cli build -c <target>
 ```
