@@ -1,0 +1,20 @@
+# ----------------------------------------------------------
+# fbb build environment dependencies
+# Installed by `fbb setup` into ~/.fbb_hispark/venv/
+# ----------------------------------------------------------
+virtualenv>=20.26,<21
+wheel>=0.45,<1
+setuptools>=80,<82
+
+# build tools
+cmake>=3.20,<4
+kconfiglib>=14.1,<15
+pycparser>=2.21,<3
+
+# image / numerics
+Pillow>=10.4,<12
+numpy>=2.0,<3
+opencv-python>=4.10,<5
+
+# video
+ffmpeg-python>=0.2,<1

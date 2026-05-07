@@ -14,7 +14,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import shutil
 import subprocess
@@ -254,19 +253,6 @@ def _cmd_env(args: argparse.Namespace) -> int:
 
 # ---- setup ----------------------------------------------------------------
 
-_CORE_REQUIREMENTS = [
-    "virtualenv>=20.26,<21",
-    "wheel>=0.45,<1",
-    "setuptools>=80,<82",
-    "cmake>=3.20,<4",
-    "kconfiglib>=14.1,<15",
-    "pycparser>=2.21,<3",
-    "Pillow>=10.4,<12",
-    "numpy>=2.0,<3",
-    "opencv-python>=4.10,<5",
-    "ffmpeg-python>=0.2,<1",
-]
-
 _OBS_BASE = "https://hispark-obs.obs.cn-east-3.myhuaweicloud.com"
 _PYTHON_VERSION = "3.11.4"
 
@@ -340,8 +326,13 @@ def _cmd_setup(args: argparse.Namespace) -> int:
     # 3. Install build dependencies
     print(f"[{step}/{total}] installing build dependencies ...")
     pip_index = os.environ.get("FBB_PIP_INDEX", "https://pypi.tuna.tsinghua.edu.cn/simple")
-    _run([uv, "pip", "install", "--python", str(venv_python), "--index-url", pip_index, *_CORE_REQUIREMENTS],
-         "dependency install failed")
+    req_file = Path(__file__).parent / "requirements.txt"
+    if req_file.exists():
+        _run([uv, "pip", "install", "--python", str(venv_python), "--index-url", pip_index, "-r", str(req_file)],
+             "dependency install failed")
+    else:
+        print(_red("error:") + " requirements.txt not found in fbb_cli package", file=sys.stderr)
+        return 1
     print(_green("  build dependencies installed"))
     step += 1
 
