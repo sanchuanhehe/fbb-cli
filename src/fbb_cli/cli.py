@@ -2,7 +2,7 @@
 
 Usage:
     fbb setup                     # provision build environment (one-time)
-    fbb build -c <target> [--sdk-dir <dir>]
+    fbb build -t <target> [--sdk-dir <dir>]
     fbb run -- <cmd> [args...]
     fbb doctor [--sdk-dir <dir>]
     fbb shell
@@ -40,20 +40,26 @@ _CYAN = "\033[36m"
 _RESET = "\033[0m"
 
 
+def _use_color() -> bool:
+    if os.environ.get("NO_COLOR"):
+        return False
+    return hasattr(sys.stderr, "isatty") and sys.stderr.isatty()
+
+
 def _green(s: str) -> str:
-    return f"{_GREEN}{s}{_RESET}"
+    return f"{_GREEN}{s}{_RESET}" if _use_color() else s
 
 
 def _red(s: str) -> str:
-    return f"{_RED}{s}{_RESET}"
+    return f"{_RED}{s}{_RESET}" if _use_color() else s
 
 
 def _yellow(s: str) -> str:
-    return f"{_YELLOW}{s}{_RESET}"
+    return f"{_YELLOW}{s}{_RESET}" if _use_color() else s
 
 
 def _cyan(s: str) -> str:
-    return f"{_CYAN}{s}{_RESET}"
+    return f"{_CYAN}{s}{_RESET}" if _use_color() else s
 
 
 def _add_install_dir_flag(parser: argparse.ArgumentParser) -> None:
@@ -127,62 +133,60 @@ def _cmd_doctor(args: argparse.Namespace) -> int:
     install_dir = _resolve_install_dir(args)
     sdk_dir = find_sdk_dir(explicit=args.sdk_dir or os.environ.get("FBB_SDK_DIR"))
 
-    print(_cyan("fbb doctor"))
-    print(f"  install dir : {install_dir}")
+    out = lambda s: print(s, file=sys.stderr)
+
+    out(_cyan("fbb doctor"))
+    out(f"  install dir : {install_dir}")
     if sdk_dir:
-        print(f"  sdk dir     : {sdk_dir}")
+        out(f"  sdk dir     : {sdk_dir}")
     else:
-        print(_yellow("  sdk dir     :") + " not detected (ok if only checking env)")
-    print()
+        out(_yellow("  sdk dir     :") + " not detected (ok if only checking env)")
+    out("")
 
     exit_code = 0
 
-    # Check venv
-    print(_cyan("[venv]"))
+    out(_cyan("[venv]"))
     problems = check_venv(install_dir)
     if problems:
         for p in problems:
-            print(f"  {_red('✗')} {p}")
+            out(f"  {_red('✗')} {p}")
         exit_code = 1
     else:
-        print(f"  {_green('✓')} venv ok")
+        out(f"  {_green('✓')} venv ok")
 
-    # Check toolchain
-    print(_cyan("[toolchain]"))
+    out(_cyan("[toolchain]"))
     problems = check_toolchain(install_dir)
     if problems:
         for p in problems:
-            print(f"  {_yellow('⚠')} {p}")
+            out(f"  {_yellow('⚠')} {p}")
     else:
-        print(f"  {_green('✓')} toolchain ok")
+        out(f"  {_green('✓')} toolchain ok")
 
-    # Check SDK patches if sdk_dir found
     if sdk_dir:
-        print(_cyan("[sdk patches]"))
+        out(_cyan("[sdk patches]"))
         shorten = sdk_dir / "src" / "build" / "script" / "fbb_inc_shorten.py"
         if shorten.exists():
-            print(f"  {_green('✓')} path shortener: {shorten}")
+            out(f"  {_green('✓')} path shortener: {shorten}")
         else:
-            print(f"  {_yellow('⚠')} path shortener missing: {shorten}")
+            out(f"  {_yellow('⚠')} path shortener missing: {shorten}")
             exit_code = 1
 
         for cmake_file in (sdk_dir / "src" / "build" / "toolchains").glob("riscv32_musl_105*.cmake"):
             content = cmake_file.read_text()
             if "CMAKE_NINJA_FORCE_RESPONSE_FILE" in content:
-                print(f"  {_green('✓')} response-file patch: {cmake_file.name}")
+                out(f"  {_green('✓')} response-file patch: {cmake_file.name}")
             else:
-                print(f"  {_yellow('⚠')} response-file patch missing in: {cmake_file.name}")
+                out(f"  {_yellow('⚠')} response-file patch missing in: {cmake_file.name}")
                 exit_code = 1
 
-    # Print fix instructions
     if exit_code != 0:
-        print()
-        print(_cyan("[fix]"))
-        print("  Run 'fbb setup' to repair the build environment:")
-        print("    fbb setup --force")
-        print()
-        print("  If the CLI itself is broken, reinstall it:")
-        print("    uv tool install --force git+https://github.com/sanchuanhehe/fbb-cli.git")
+        out("")
+        out(_cyan("[fix]"))
+        out("  Run 'fbb setup' to repair the build environment:")
+        out("    fbb setup --force")
+        out("")
+        out("  If the CLI itself is broken, reinstall it:")
+        out("    uv tool install --force git+https://github.com/sanchuanhehe/fbb-cli.git")
 
     return exit_code
 
@@ -268,6 +272,15 @@ def _cmd_setup(args: argparse.Namespace) -> int:
         print("  curl -LsSf https://astral.sh/uv/install.sh | sh", file=sys.stderr)
         return 1
 
+    if args.dry_run:
+        print(_cyan("fbb setup (dry run)"))
+        print(f"  install dir    : {install_dir}")
+        print(f"  python version : {_PYTHON_VERSION}")
+        print(f"  venv           : {install_dir / 'venv'}")
+        print(f"  toolchain      : {'skipped' if args.skip_tools else install_dir / 'toolchain'}")
+        print(f"  dependencies   : from requirements.txt")
+        return 0
+
     print(_cyan("fbb setup"))
     print(f"  install dir : {install_dir}")
     print()
@@ -281,7 +294,8 @@ def _cmd_setup(args: argparse.Namespace) -> int:
     need_python = not args.skip_python
     if need_python:
         print(f"[{step}/{total}] installing Python {_PYTHON_VERSION} ...")
-        _run([uv, "python", "install", _PYTHON_VERSION], "python install failed")
+        if not _run_checked([uv, "python", "install", _PYTHON_VERSION], "python install failed"):
+            return 1
         py_found = _uv_python_find(uv, _PYTHON_VERSION)
         if py_found is None:
             print(_red("error:") + f" could not find Python {_PYTHON_VERSION}", file=sys.stderr)
@@ -292,7 +306,8 @@ def _cmd_setup(args: argparse.Namespace) -> int:
         py_found = _uv_python_find(uv, _PYTHON_VERSION)
         if py_found is None:
             print(_yellow(f"  Python {_PYTHON_VERSION} not found, will install"))
-            _run([uv, "python", "install", _PYTHON_VERSION], "python install failed")
+            if not _run_checked([uv, "python", "install", _PYTHON_VERSION], "python install failed"):
+                return 1
             py_found = _uv_python_find(uv, _PYTHON_VERSION)
         print(_green(f"  Using Python: {py_found}"))
 
@@ -304,14 +319,13 @@ def _cmd_setup(args: argparse.Namespace) -> int:
         else:
             print(_yellow(f"  venv already exists, use --force to recreate"))
             step += 1
-            # fall through to install deps
     if not venv_dir.exists():
-        _run([uv, "venv", str(venv_dir), "--python", _PYTHON_VERSION], "venv creation failed")
+        if not _run_checked([uv, "venv", str(venv_dir), "--python", _PYTHON_VERSION], "venv creation failed"):
+            return 1
         venv_python = find_python(venv_dir)
         if venv_python is None:
             print(_red("error:") + " venv created but python not found", file=sys.stderr)
             return 1
-        # write pip.conf
         pip_index = os.environ.get("FBB_PIP_INDEX", "https://pypi.tuna.tsinghua.edu.cn/simple")
         pip_conf = venv_dir / ("pip.ini" if sys.platform == "win32" else "pip.conf")
         pip_conf.write_text(f"[global]\nindex-url = {pip_index}\n\n[install]\ndisable-pip-version-check = true\n")
@@ -328,8 +342,9 @@ def _cmd_setup(args: argparse.Namespace) -> int:
     pip_index = os.environ.get("FBB_PIP_INDEX", "https://pypi.tuna.tsinghua.edu.cn/simple")
     req_file = Path(__file__).parent / "requirements.txt"
     if req_file.exists():
-        _run([uv, "pip", "install", "--python", str(venv_python), "--index-url", pip_index, "-r", str(req_file)],
-             "dependency install failed")
+        if not _run_checked([uv, "pip", "install", "--python", str(venv_python), "--index-url", pip_index, "-r", str(req_file)],
+                            "dependency install failed"):
+            return 1
     else:
         print(_red("error:") + " requirements.txt not found in fbb_cli package", file=sys.stderr)
         return 1
@@ -358,12 +373,12 @@ def _cmd_setup(args: argparse.Namespace) -> int:
                 if tc_dir.exists():
                     shutil.rmtree(tc_dir)
                 tc_dir.mkdir(parents=True, exist_ok=True)
-                _run(["tar", "-xzf", tc_tgz, "-C", str(tc_dir)], "toolchain extraction failed")
+                if not _run_checked(["tar", "-xzf", tc_tgz, "-C", str(tc_dir)], "toolchain extraction failed"):
+                    print(_yellow("  toolchain extraction failed, continuing without it"))
                 print(_green(f"  toolchain: {tc_dir}"))
             else:
                 print(_yellow(f"  toolchain not available at {obs_base}/{tc_name}"))
-                print(_yellow(f"  toolchain not available at {obs_base}/{tc_name}"))
-                print(_yellow("  skip for now — download it manually into {tc_dir} if needed"))
+                print(_yellow(f"  skip for now — download it into {tc_dir} manually if needed"))
         finally:
             Path(tc_tgz).unlink(missing_ok=True)
 
@@ -372,7 +387,7 @@ def _cmd_setup(args: argparse.Namespace) -> int:
     print()
     print(_cyan("Try:"))
     print("  fbb doctor")
-    print("  fbb build -c <target>")
+    print("  fbb build -t <target>")
     return 0
 
 
@@ -395,13 +410,14 @@ def _uv_python_find(uv: str, version: str) -> str | None:
     return None
 
 
-def _run(cmd: list[str], err_msg: str) -> None:
+def _run_checked(cmd: list[str], err_msg: str) -> bool:
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        print(_red(f"error:") + f" {err_msg}", file=sys.stderr)
+        print(_red("error:") + f" {err_msg}", file=sys.stderr)
         if result.stderr:
             print(result.stderr, file=sys.stderr)
-        sys.exit(1)
+        return False
+    return True
 
 
 # ---- helpers --------------------------------------------------------------
@@ -440,6 +456,17 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="fbb",
         description="HiSpark fbb framework build environment CLI.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""EXAMPLES:
+  fbb setup                      provision build environment
+  fbb build -t ws63-liteos-app   build a target
+  fbb run -- python my_script.py run a command in the env
+  fbb doctor --sdk-dir ~/fbb_ws63  check environment health
+  fbb env --json                 machine-readable activation info
+
+EXIT CODES:
+  0  Success
+  1  General failure
+  2  Invalid arguments""",
     )
     parser.add_argument(
         "-V", "--version",
@@ -451,7 +478,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     # build
     p_build = sub.add_parser("build", help="Build a named target")
-    p_build.add_argument("-c", "--target", required=True, help="Build target name (e.g. ws63-liteos-app)")
+    p_build.add_argument("-t", "--target", required=True, help="Build target name (e.g. ws63-liteos-app)")
     _add_install_dir_flag(p_build)
     _add_sdk_dir_flag(p_build)
     p_build.set_defaults(func=_cmd_build)
@@ -478,13 +505,16 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_install_dir_flag(p_setup)
     p_setup.add_argument("--skip-python", action="store_true", help="Skip Python installation")
     p_setup.add_argument("--skip-tools", action="store_true", help="Skip toolchain download")
-    p_setup.add_argument("--force", action="store_true", help="Recreate venv even if it exists")
+    p_setup.add_argument("-f", "--force", action="store_true", help="Recreate venv even if it exists")
+    p_setup.add_argument("-n", "--dry-run", action="store_true", help="Show what would be done without executing")
     p_setup.set_defaults(func=_cmd_setup)
 
     # env
     p_env = sub.add_parser("env", help="Print activation snippet for shell integration")
     p_env.add_argument("--print", dest="print", choices=["sh", "ps1", "bat", "json"], default="sh",
                        help="Output format (default: sh)")
+    p_env.add_argument("--json", dest="print", action="store_const", const="json",
+                       help="Shortcut for --print json")
     _add_install_dir_flag(p_env)
     p_env.set_defaults(func=_cmd_env)
 

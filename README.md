@@ -5,7 +5,7 @@ One-command build environment for any HiSpark **fbb framework** SDK
 Linux, and macOS.
 
 ```
-fbb build -c <target>    # e.g. fbb build -c ws63-liteos-app
+fbb build -c <target>    # e.g. fbb build -t ws63-liteos-app
 ```
 
 No `source` step. `fbb` self-activates the Python venv and toolchain on
@@ -64,7 +64,7 @@ Python 3.11.4, the build venv, and the RISC-V toolchain into
 
 ```bash
 cd ~/hispark/fbb_ws63/src
-fbb build -c ws63-liteos-app
+fbb build -t ws63-liteos-app
 ```
 
 ## Mirror configuration

@@ -28,7 +28,7 @@ Verify with `fbb doctor`.
 
 | Task | Command |
 |---|---|
-| Build a target | `fbb build -c <target>` |
+| Build a target | `fbb build -t <target>` |
 | Run a command in env | `fbb run -- <cmd> [args...]` |
 | Diagnose env issues | `fbb doctor --sdk-dir <sdk-dir>` |
 | Spawn activated shell | `fbb shell` |
@@ -51,7 +51,7 @@ Examples for `fbb_ws63`:
 
 ## Critical anti-patterns
 
-1. **Do NOT** run bare `python build.py` — use `fbb build -c <target>`.
+1. **Do NOT** run bare `python build.py` — use `fbb build -t <target>`.
 2. **Do NOT** `source export.sh` — agent shells are stateless. Use `fbb <subcommand>`.
 3. **Do NOT** move the SDK to a "shorter path" for cmdline errors — the
    path-shortener at `<sdk>/src/build/script/fbb_inc_shorten.py` handles it.
