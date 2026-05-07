@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "cli-standards": {
+      "source": "sanchuanhehe/hisiflash",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/cli-standards/SKILL.md",
+      "computedHash": "46b35c7562f6dd522020be940b8451320edd541528159a64792a3d361f6f3f27"
+    }
+  }
+}
