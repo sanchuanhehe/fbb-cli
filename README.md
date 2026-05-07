@@ -22,14 +22,7 @@ Paste that into your agent. It reads the README so you don't have to.
 
 ## For LLM Agents
 
-Paste this into your AI coding agent (Claude Code, Cursor, etc.):
-
-```
-Read and follow the installation instructions at:
-https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/docs/install.md
-```
-
-Or fetch directly:
+Fetch the installation guide and follow it:
 
 ```bash
 curl -s https://raw.githubusercontent.com/sanchuanhehe/fbb-cli/main/docs/install.md
